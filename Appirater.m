@@ -101,6 +101,11 @@ static BOOL _alwaysUseMainBundle = NO;
     _significantEventsUntilPrompt = value;
 }
 
++ (NSInteger) numberOfSignificantEvents
+{
+    return [[NSUserDefaults standardUserDefaults] integerForKey:kAppiraterSignificantEventCount];
+}
+
 + (void) setTimeBeforeReminding:(double)value {
     _timeBeforeReminding = value;
 }
@@ -212,27 +217,33 @@ static BOOL _alwaysUseMainBundle = NO;
 }
 
 - (void)showRatingAlert:(BOOL)displayRateLaterButton {
-  UIAlertView *alertView = nil;
-  if (displayRateLaterButton) {
-  	alertView = [[UIAlertView alloc] initWithTitle:APPIRATER_MESSAGE_TITLE
+    
+    id <AppiraterDelegate> delegate = _delegate;
+    if (delegate && [delegate respondsToSelector:@selector(appiraterShouldDisplayAlert:)]) {
+        if (![delegate appiraterShouldDisplayAlert:self])
+            return; // delegate declined to display alert
+    }
+    
+    UIAlertView *alertView = nil;
+    if (displayRateLaterButton) {
+    alertView = [[UIAlertView alloc] initWithTitle:APPIRATER_MESSAGE_TITLE
                                            message:APPIRATER_MESSAGE
                                           delegate:self
                                  cancelButtonTitle:APPIRATER_CANCEL_BUTTON
                                  otherButtonTitles:APPIRATER_RATE_BUTTON, APPIRATER_RATE_LATER, nil];
-  } else {
-  	alertView = [[UIAlertView alloc] initWithTitle:APPIRATER_MESSAGE_TITLE
+    } else {
+    alertView = [[UIAlertView alloc] initWithTitle:APPIRATER_MESSAGE_TITLE
                                            message:APPIRATER_MESSAGE
                                           delegate:self
                                  cancelButtonTitle:APPIRATER_CANCEL_BUTTON
                                  otherButtonTitles:APPIRATER_RATE_BUTTON, nil];
-  }
+    }
 
 	self.ratingAlert = alertView;
     [alertView show];
-
-    id <AppiraterDelegate> delegate = _delegate;
+    
     if (delegate && [delegate respondsToSelector:@selector(appiraterDidDisplayAlert:)]) {
-             [delegate appiraterDidDisplayAlert:self];
+        [delegate appiraterDidDisplayAlert:self];
     }
 }
 
@@ -516,11 +527,16 @@ static BOOL _alwaysUseMainBundle = NO;
 	return controller;
 }
 
-+ (void)rateApp {
-	
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
++ (void)markAppWasRated
+{
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
 	[userDefaults setBool:YES forKey:kAppiraterRatedCurrentVersion];
 	[userDefaults synchronize];
+}
+
++ (void)rateApp {
+	
+	[self markAppWasRated];
 
 	//Use the in-app StoreKit view if available (iOS 6) and imported. This works in the simulator.
 	if (![Appirater sharedInstance].openInAppStore && NSStringFromClass([SKStoreProductViewController class]) != nil) {

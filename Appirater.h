@@ -222,6 +222,7 @@ extern NSString *const kAppiraterReminderRequestDate;
  */
 + (void) setSignificantEventsUntilPrompt:(NSInteger)value;
 
++ (NSInteger) numberOfSignificantEvents;
 
 /*!
  Once the rating alert is presented to the user, they might select
@@ -290,5 +291,17 @@ extern NSString *const kAppiraterReminderRequestDate;
  Calls [Appirater tryToShowPrompt]. See tryToShowPrompt for details of functionality.
  */
 + (void)showPrompt __attribute__((deprecated));
+
+@end
+
+/*!
+ Use these methods only if you are 100% sure you know what you are doing
+ */
+@interface Appirater(Dangerous)
+
+/*!
+ Marks that current version of app has been rated no matter it if really was rated or not.
+ */
++ (void)markAppWasRated;
 
 @end
